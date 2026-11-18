@@ -1,0 +1,22 @@
+# Dependencies & local runtime artifacts
+node_modules/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# Git, docs & presentation files
+.git/
+.gitignore
+*.pptx
+*.log
+tmp/
+temp/
+.DS_Store
+Thumbs.db

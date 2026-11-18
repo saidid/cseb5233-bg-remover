@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClearCut Cloud — High-Resolution AI Image Background Remover</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            emerald: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background-color: #020617;
+      background-image:
+        radial-gradient(circle at 12% 10%, rgba(16, 185, 129, 0.16), transparent 36%),
+        radial-gradient(circle at 88% 14%, rgba(6, 182, 212, 0.12), transparent 34%),
+        radial-gradient(circle at 50% 95%, rgba(16, 185, 129, 0.10), transparent 42%);
+      background-attachment: fixed;
+    }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .glass-emerald {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(15, 23, 42, 0.78));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      box-shadow: 0 16px 40px -18px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(52, 211, 153, 0.16);
+    }
+
+    .checkerboard {
+      background-color: #1e293b;
+      background-image:
+        linear-gradient(45deg, #334155 25%, transparent 25%),
+        linear-gradient(-45deg, #334155 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #334155 75%),
+        linear-gradient(-45deg, transparent 75%, #334155 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    }
+
+    .dropzone-active {
+      border-color: #34d399 !important;
+      background: rgba(16, 185, 129, 0.12) !important;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16);
+    }
+
+    /* Custom Before/After split range input */
+    .split-range {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: ew-resize;
+    }
+
+    .split-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      cursor: ew-resize;
+    }
+
+    .split-range::-moz-range-thumb {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 0;
+      cursor: ew-resize;
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+
+    .pulse-dot {
+      animation: pulseSoft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 font-sans antialiased flex flex-col">
+
+  <!-- Top Academic & Cloud Status Bar -->
+  <div class="border-b border-emerald-500/20 bg-slate-950/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-300">
+          <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
+          CSEB5233 Designing Applications on Cloud (2627S1)
+        </span>
+        <span class="hidden sm:inline text-slate-600">|</span>
+        <span class="text-slate-400">
+          <strong class="text-slate-200">1.</strong> Abdullah Mujaddid Adli Bin Abdul Halim (<span class="font-mono text-emerald-300/90">BSW01084329</span>)
+          <span class="mx-1.5 text-slate-600">&bull;</span>
+          <strong class="text-slate-200">2.</strong> SHAH SIRAJUDDIN BIN KAMARUDIN (<span class="font-mono text-emerald-300/90">BSW01085924</span>)
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-1 ring-white/20">
+          <i data-lucide="sparkles" class="w-6 h-6 text-slate-950"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+              ClearCut <span class="text-emerald-400">Cloud</span>
+            </h1>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400">
+            High-Resolution AI Image Background Remover
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Studio Grid: Upload Controls + Preview Canvas -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Column: Upload & Quality Controls -->
+      <div class="lg:col-span-4 space-y-5">
+        <div class="glass-panel rounded-2xl p-5 space-y-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-400"></i>
+              Upload Source Image
+            </h2>
+            <span class="text-[11px] font-mono text-slate-400">JPG &bull; PNG &bull; WEBP</span>
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div
+            id="dropZone"
+            tabindex="0"
+            role="button"
+            aria-label="Upload image by clicking or dragging and dropping"
+            class="relative group rounded-2xl border-2 border-dashed border-slate-700 hover:border-emerald-400/70 bg-slate-950/60 p-6 text-center cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+          >
+            <input
+              id="fileInput"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+            />
+            <div class="mx-auto w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <i data-lucide="image-plus" class="w-7 h-7 text-emerald-400"></i>
+            </div>
+            <p class="text-sm font-semibold text-white">
+              Drag &amp; drop your image here
+            </p>
+            <p class="text-xs text-slate-400 mt-1">
+              or <span class="text-emerald-400 font-semibold underline underline-offset-2">browse files</span> (up to 30 MB)
+            </p>
+            <p class="text-[11px] text-slate-500 mt-3">
+              Preserves 100% original pixel resolution &bull; Edge-accurate PNG alpha
+            </p>
+          </div>
+
+          <button
+            id="loadSampleBtn"
+            type="button"
+            class="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-emerald-300 transition cursor-pointer"
+          >
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Try Built-In High-Res Sample Image (1024&times;768)</span>
+          </button>
+
+          <!-- AI Model Precision Selector -->
+          <div class="space-y-2">
+            <label for="modelSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              AI Segmentation Model
+            </label>
+            <select
+              id="modelSelect"
+              class="w-full rounded-xl bg-slate-950/90 border border-slate-700/80 px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+            >
+              <option value="isnet_fp16" selected>High-Res Balanced (ISNet FP16 — Recommended)</option>
+              <option value="isnet">Maximum Edge Precision (ISNet Full FP32)</option>
+              <option value="isnet_quint8">Fast Mode (ISNet Quantized INT8)</option>
+            </select>
+            <p class="text-[11px] text-slate-400">
+              First run caches the ONNX neural weights in your browser; subsequent removals run rapidly.
+            </p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-2.5 pt-1">
+            <button
+              id="processBtn"
+              type="button"
+              disabled
+              class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-950 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+            >
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+              <span>Remove Background (Full-Res)</span>
+            </button>
+
+            <button
+              id="downloadBtn"
+              type="button"
+              disabled
+              class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 disabled:border-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-emerald-300 transition cursor-pointer"
+            >
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download High-Res PNG</span>
+            </button>
+          </div>
+
+          <!-- Progress Status Box -->
+          <div id="progressContainer" class="hidden rounded-xl bg-slate-950/80 border border-emerald-500/30 p-3.5 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span id="progressLabel" class="font-medium text-emerald-300 flex items-center gap-2">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                Initializing AI Worker...
+              </span>
+              <span id="progressPercent" class="font-mono text-slate-300">0%</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-200" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Error / Notification Banner -->
+          <div id="statusAlert" class="hidden rounded-xl p-3.5 text-xs border"></div>
+
+          <!-- Selected File Info Card -->
+          <div id="fileSpecsCard" class="hidden rounded-xl bg-slate-950/70 border border-slate-800 p-3.5 space-y-2 text-xs">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>File Name</span>
+              <span id="specFileName" class="font-mono text-slate-200 truncate max-w-[180px]">—</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Original Resolution</span>
+              <span id="specOrigRes" class="font-mono text-slate-200">—</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Output Resolution</span>
+              <span id="specOutRes" class="font-mono text-emerald-300 font-semibold">—</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Processed PNG Size</span>
+              <span id="specOutSize" class="font-mono text-slate-200">—</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Sharp Alpha Verified</span>
+              <span id="specAlpha" class="font-mono text-emerald-300">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Before vs. After Preview Workspace -->
+      <div class="lg:col-span-8">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <!-- Preview Toolbar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/90">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="split-square-horizontal" class="w-5 h-5 text-emerald-400"></i>
+                Before vs. After Preview
+              </h2>
+              <span id="resolutionVerifiedPill" class="hidden px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                Full-Res Preserved
+              </span>
+            </div>
+
+            <!-- View Mode Toggle -->
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="inline-flex rounded-xl bg-slate-950/90 p-1 border border-slate-800 text-xs">
+                <button id="modeSplitBtn" type="button" class="px-3 py-1.5 rounded-lg font-semibold bg-emerald-500 text-slate-950 transition cursor-pointer">
+                  Split Slider
+                </button>
+                <button id="modeSideBtn" type="button" class="px-3 py-1.5 rounded-lg font-medium text-slate-300 hover:text-white transition cursor-pointer">
+                  Side-by-Side
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Backdrop Color Selector Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-slate-400 font-medium mr-1">After Backdrop:</span>
+              <button type="button" data-backdrop="checkerboard" class="backdrop-btn ring-2 ring-emerald-400 w-7 h-7 rounded-lg checkerboard border border-slate-600 transition cursor-pointer" title="Transparent Checkerboard"></button>
+              <button type="button" data-backdrop="#ffffff" class="backdrop-btn w-7 h-7 rounded-lg bg-white border border-slate-600 transition cursor-pointer" title="Pure White"></button>
+              <button type="button" data-backdrop="#0f172a" class="backdrop-btn w-7 h-7 rounded-lg bg-slate-900 border border-slate-600 transition cursor-pointer" title="Deep Slate"></button>
+              <button type="button" data-backdrop="#059669" class="backdrop-btn w-7 h-7 rounded-lg bg-emerald-600 border border-slate-600 transition cursor-pointer" title="Studio Emerald"></button>
+              <button type="button" data-backdrop="#0284c7" class="backdrop-btn w-7 h-7 rounded-lg bg-sky-600 border border-slate-600 transition cursor-pointer" title="Studio Sky"></button>
+              <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-700 text-slate-300 cursor-pointer hover:border-emerald-400/60 transition" title="Custom Solid Backdrop Color">
+                <i data-lucide="palette" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Custom</span>
+                <input id="customColorPicker" type="color" value="#10b981" class="w-4 h-4 bg-transparent border-0 cursor-pointer" />
+              </label>
+            </div>
+            <span id="activeBackdropLabel" class="font-mono text-slate-400">Transparent PNG</span>
+          </div>
+
+          <!-- Empty State -->
+          <div id="previewEmptyState" class="rounded-2xl border border-slate-800/90 bg-slate-950/60 min-h-[420px] flex flex-col items-center justify-center p-8 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
+              <i data-lucide="layers" class="w-8 h-8 text-emerald-400/80"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-200">Ready for High-Resolution Background Removal</h3>
+            <p class="text-xs sm:text-sm text-slate-400 max-w-md mt-2">
+              Upload any JPG, PNG, or WEBP image on the left. ClearCut Cloud runs neural segmentation locally in your browser at full resolution, validates the transparent PNG with Sharp, stores the binary in Object Storage, and logs metadata in SQL.
+            </p>
+          </div>
+
+          <!-- Interactive Split Slider Preview -->
+          <div id="splitPreviewWrapper" class="hidden">
+            <div
+              id="splitStage"
+              class="relative rounded-2xl overflow-hidden border border-slate-700/80 checkerboard min-h-[380px] max-h-[560px] flex items-center justify-center select-none"
+            >
+              <!-- Base Layer: Processed (After) Image -->
+              <img
+                id="afterImageSplit"
+                alt="Background removed transparent preview"
+                class="block max-w-full max-h-[560px] w-auto h-auto object-contain"
+              />
+
+              <!-- Overlay Layer: Original (Before) Image clipped by slider -->
+              <div
+                id="beforeClipLayer"
+                class="absolute inset-0 flex items-center justify-center pointer-events-none"
+                style="clip-path: inset(0 50% 0 0);"
+              >
+                <img
+                  id="beforeImageSplit"
+                  alt="Original uploaded image"
+                  class="block max-w-full max-h-[560px] w-auto h-auto object-contain"
+                />
+              </div>
+
+              <!-- Vertical Divider Line & Handle -->
+              <div
+                id="splitDivider"
+                class="absolute top-0 bottom-0 w-0.5 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.9)] pointer-events-none"
+                style="left: 50%;"
+              >
+                <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-slate-950/90 border-2 border-emerald-400 text-emerald-300 flex items-center justify-center shadow-lg">
+                  <i data-lucide="move-horizontal" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <!-- Labels -->
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-700/80 text-[11px] font-semibold text-slate-200 pointer-events-none">
+                Before (Original)
+              </span>
+              <span class="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-[11px] font-semibold text-emerald-200 backdrop-blur-md pointer-events-none">
+                After (Transparent PNG)
+              </span>
+
+              <!-- Accessible Range Input covering the stage -->
+              <input
+                id="splitSliderInput"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+                aria-label="Slide to compare before and after images"
+                class="split-range absolute inset-0 w-full h-full z-10 m-0"
+              />
+            </div>
+          </div>
+
+          <!-- Side-by-Side Comparison View -->
+          <div id="sidePreviewWrapper" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/80 flex flex-col">
+              <div class="px-3.5 py-2 border-b border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <span>Before (Original)</span>
+                <span id="sideBeforeMeta" class="font-mono text-[11px] text-slate-400"></span>
+              </div>
+              <div class="flex-1 min-h-[300px] max-h-[460px] flex items-center justify-center p-3">
+                <img id="beforeImageSide" alt="Original uploaded image" class="max-w-full max-h-[430px] object-contain rounded-lg" />
+              </div>
+            </div>
+
+            <div class="rounded-2xl overflow-hidden border border-emerald-500/35 bg-slate-950/80 flex flex-col">
+              <div class="px-3.5 py-2 border-b border-slate-800 text-xs font-semibold text-emerald-300 flex items-center justify-between">
+                <span>After (High-Res Cutout)</span>
+                <span id="sideAfterMeta" class="font-mono text-[11px] text-emerald-300/80"></span>
+              </div>
+              <div id="sideAfterBackdrop" class="flex-1 min-h-[300px] max-h-[460px] checkerboard flex items-center justify-center p-3 transition-colors">
+                <img id="afterImageSide" alt="Processed transparent PNG" class="max-w-full max-h-[430px] object-contain rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cloud Architecture & SQL Metadata Log Panel -->
+    <section id="architecture-panel" class="glass-panel rounded-2xl p-5 sm:p-6 space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/90 pb-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="server" class="w-5 h-5 text-emerald-400"></i>
+              Cloud Architecture &amp; SQL Metadata Log
+            </h2>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+              attachments_metadata
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            Live inspection of the decoupled GCP storage architecture — binary files reside in Object Storage while SQL stores only lightweight relational metadata.
+          </p>
+        </div>
+        <button
+          id="refreshLogBtn"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 transition self-start md:self-auto cursor-pointer"
+        >
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Refresh Log
+        </button>
+      </div>
+
+      <!-- Architecture KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-xl bg-slate-950/75 border border-slate-800 p-4">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>SQL BLOB Columns</span>
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div id="kpiBlobCount" class="text-2xl font-extrabold text-emerald-400 font-mono mt-1.5">0</div>
+          <p class="text-[11px] text-slate-500 mt-1">Verified via PRAGMA table_info</p>
+        </div>
+
+        <div class="rounded-xl bg-slate-950/75 border border-slate-800 p-4">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>Metadata Rows Logged</span>
+            <i data-lucide="table-2" class="w-4 h-4 text-teal-400"></i>
+          </div>
+          <div id="kpiTotalFiles" class="text-2xl font-extrabold text-white font-mono mt-1.5">0</div>
+          <p class="text-[11px] text-slate-500 mt-1">Table: attachments_metadata</p>
+        </div>
+
+        <div class="rounded-xl bg-slate-950/75 border border-slate-800 p-4">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>Binary Volume (Object Store)</span>
+            <i data-lucide="hard-drive" class="w-4 h-4 text-sky-400"></i>
+          </div>
+          <div id="kpiObjectBytes" class="text-2xl font-extrabold text-white font-mono mt-1.5">0 KB</div>
+          <p class="text-[11px] text-slate-500 mt-1">Offloaded outside SQL database</p>
+        </div>
+
+        <div class="rounded-xl bg-slate-950/75 border border-slate-800 p-4">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>Active Object Driver</span>
+            <i data-lucide="cloud" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div id="kpiStorageDriver" class="text-sm font-bold text-emerald-300 font-mono mt-2 truncate">Checking...</div>
+          <p id="kpiStorageDetail" class="text-[11px] text-slate-500 mt-1 truncate">GCS / Ephemeral Auto-Fallback</p>
+        </div>
+      </div>
+
+      <!-- Design Pattern Comparison Strip (Zero-BLOB Education) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="rounded-xl bg-rose-950/25 border border-rose-500/25 p-3.5">
+          <div class="font-bold text-rose-300 flex items-center gap-1.5">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+            Anti-Pattern Avoided: SQL BLOB Storage
+          </div>
+          <p class="text-slate-400 mt-1 font-mono text-[11px]">
+            attachments (id, file_blob) &rarr; High Cloud SQL CPU/RAM/IOPS, bloated automated backups, 10&ndash;20&times; higher GCP cost.
+          </p>
+        </div>
+        <div class="rounded-xl bg-emerald-950/30 border border-emerald-500/30 p-3.5">
+          <div class="font-bold text-emerald-300 flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            Implemented Pattern: GCS Object Store + SQL Metadata
+          </div>
+          <p class="text-slate-300 mt-1 font-mono text-[11px]">
+            attachments_metadata (id, file_name, file_url, file_size, content_type, resolution, created_at) &rarr; Fast, cheap &amp; scalable.
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Metadata Table -->
+      <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/75">
+        <table class="min-w-full divide-y divide-slate-800 text-left text-xs">
+          <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-mono text-[11px]">
+            <tr>
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">file_name</th>
+              <th class="px-4 py-3">file_url</th>
+              <th class="px-4 py-3">file_size</th>
+              <th class="px-4 py-3">content_type</th>
+              <th class="px-4 py-3">resolution</th>
+              <th class="px-4 py-3">created_at</th>
+              <th class="px-4 py-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="metadataTableBody" class="divide-y divide-slate-800/70 text-slate-200 font-mono">
+            <tr>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-500 font-sans">
+                Loading SQL metadata log...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Academic Footer -->
+  <footer class="mt-12 border-t border-slate-800/80 bg-slate-950/90">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="space-y-1">
+        <div class="font-bold text-slate-200 text-sm">
+          ClearCut Cloud &mdash; High-Resolution AI Image Background Remover
+        </div>
+        <div>
+          Subject: <span class="text-emerald-300 font-semibold">CSEB5233 Designing Applications on Cloud (2627S1)</span>
+        </div>
+      </div>
+      <div class="space-y-1 md:text-right">
+        <div>
+          <span class="text-slate-500">Student 1:</span>
+          <span class="text-slate-200 font-medium">Abdullah Mujaddid Adli Bin Abdul Halim</span>
+          <span class="font-mono text-emerald-400 ml-1">(BSW01084329)</span>
+        </div>
+        <div>
+          <span class="text-slate-500">Student 2:</span>
+          <span class="text-slate-200 font-medium">SHAH SIRAJUDDIN BIN KAMARUDIN</span>
+          <span class="font-mono text-emerald-400 ml-1">(BSW01085924)</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Frontend Application Logic (ES Module) -->
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

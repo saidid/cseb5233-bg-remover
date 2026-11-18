@@ -1,0 +1,35 @@
+{
+  "name": "clearcut-cloud",
+  "version": "1.0.0",
+  "description": "ClearCut Cloud — High-Resolution AI Image Background Remover (CSEB5233 Designing Applications on Cloud 2627S1)",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "gcp",
+    "cloud-run",
+    "google-cloud-storage",
+    "background-removal",
+    "sharp",
+    "sqlite",
+    "express"
+  ],
+  "authors": [
+    "Abdullah Mujaddid Adli Bin Abdul Halim (BSW01084329)",
+    "SHAH SIRAJUDDIN BIN KAMARUDIN (BSW01085924)"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/storage": "^7.16.0",
+    "better-sqlite3": "^13.2.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.5.0",
+    "sharp": "^0.35.5"
+  }
+}

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.json.key
+service-account*.json
+
+# Local SQLite database & runtime data
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Temporary & log files
+tmp/
+temp/
+*.tmp
+*.log
+npm-debug.log*
+
+# OS & Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

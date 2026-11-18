@@ -1,0 +1,18 @@
+# Exclude local dependencies, git history, runtime DBs, secrets, and slides from Cloud Build uploads
+node_modules/
+.git/
+.gitignore
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+.env
+.env.*
+!.env.example
+*.pptx
+*.log
+tmp/
+temp/
+.DS_Store
+Thumbs.db
