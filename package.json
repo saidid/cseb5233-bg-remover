@@ -4,7 +4,7 @@
   "description": "ClearCut Cloud — High-Resolution AI Image Background Remover (CSEB5233 Designing Applications on Cloud 2627S1)",
   "main": "server.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "start": "node server.js",
